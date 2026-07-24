@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghost AI - 3-in-1 Text Transformer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); min-height: 100vh; padding: 20px; color: #fff; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 30px; padding: 20px; }
+        .header h1 { font-size: 2.5em; margin-bottom: 5px; text-shadow: 0 0 20px rgba(255,255,255,0.3); }
+        .header p { color: rgba(255,255,255,0.7); font-size: 1.1em; }
+        .card { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 25px; margin-bottom: 20px; }
+        .tool-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab { padding: 12px 20px; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; cursor: pointer; font-size: 0.95em; font-weight: 600; flex: 1; text-align: center; min-width: 100px; background: rgba(255,255,255,0.05); color: #fff; }
+        .tab.active { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.5); }
+        textarea { width: 100%; min-height: 150px; padding: 15px; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; font-size: 1em; resize: vertical; font-family: inherit; background: rgba(0,0,0,0.3); color: #fff; }
+        textarea:focus { outline: none; border-color: rgba(255,255,255,0.5); }
+        .btn-transform { width: 100%; padding: 15px; border: none; border-radius: 10px; font-size: 1.1em; font-weight: 700; cursor: pointer; margin-top: 15px; color: #fff; background: linear-gradient(135deg, #e94560, #0f3460); }
+        .btn-transform:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-transform:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(233,69,96,0.4); }
+        .result-box { background: rgba(255,255,255,0.05); border-radius: 10px; padding: 20px; margin-top: 15px; border-left: 4px solid #e94560; display: none; }
+        .result-box.show { display: block; }
+        .result-box h3 { color: #e94560; margin-bottom: 10px; }
+        .result-output { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin-top: 10px; line-height: 1.8; color: #e0e0e0; white-space: pre-wrap; }
+        .detection-result { display: flex; flex-direction: column; gap: 10px; }
+        .detection-bar { height: 30px; border-radius: 15px; background: rgba(255,255,255,0.1); overflow: hidden; }
+        .detection-fill { height: 100%; border-radius: 15px; }
+        .detection-fill.low { background: linear-gradient(90deg, #4ade80, #22c55e); }
+        .detection-fill.medium { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+        .detection-fill.high { background: linear-gradient(90deg, #f87171, #ef4444); }
+        .verdict { font-weight: 700; font-size: 1.2em; text-align: center; padding: 10px; border-radius: 8px; }
+        .verdict.safe { background: rgba(74,222,128,0.2); color: #4ade80; }
+        .verdict.suspicious { background: rgba(251,191,36,0.2); color: #fbbf24; }
+        .verdict.caught { background: rgba(248,113,113,0.2); color: #f87171; }
+        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 20px; }
+        .feature-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; text-align: center; }
+        .feature-card .icon { font-size: 1.5em; margin-bottom: 10px; color: #e94560; font-weight: 700; }
+        .feature-card h4 { color: #fff; margin-bottom: 5px; }
+        .feature-card p { color: rgba(255,255,255,0.6); font-size: 0.85em; }
+        .footer { text-align: center; color: rgba(255,255,255,0.5); margin-top: 30px; padding: 15px; font-size: 0.9em; }
+        .loader { display: none; text-align: center; padding: 20px; }
+        .loader.show { display: block; }
+        .loader span { font-weight: 600; color: #e94560; }
+        .copy-btn { margin-top: 10px; padding: 8px 16px; background: rgba(233,69,96,0.3); border: 1px solid #e94560; color: #e94560; border-radius: 6px; cursor: pointer; font-size: 0.9em; font-weight: 600; }
+        .copy-btn:hover { background: rgba(233,69,96,0.5); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Ghost AI</h1>
+            <p>3-in-1 Text Transformer</p>
+        </div>
+        <div class="card">
+            <div class="tool-tabs">
+                <button class="tab active" onclick="selectTool('professional')">Professional Writer</button>
+                <button class="tab" onclick="selectTool('humanize')">Humanizer</button>
+                <button class="tab" onclick="selectTool('ai_check')">AI Detector</button>
+            </div>
+            <textarea id="inputText" placeholder="Paste any casual paragraph here..."></textarea>
+            <div class="loader" id="loader"><span>AI is processing your text...</span></div>
+            <button class="btn-transform" id="transformBtn" onclick="transformText()">Transform Text</button>
+            <div class="result-box" id="resultBox">
+                <h3 id="resultTitle">Result</h3>
+                <div id="resultContent"></div>
+            </div>
+        </div>
+        <div class="features">
+            <div class="feature-card"><div class="icon">P</div><h4>Professional Writer</h4><p>AI-powered conversion of casual text into professional writing</p></div>
+            <div class="feature-card"><div class="icon">H</div><h4>Humanizer</h4><p>AI-powered text humanization to bypass detection</p></div>
+            <div class="feature-card"><div class="icon">A</div><h4>AI Detector</h4><p>Checks if text passes AI detection tools</p></div>
+        </div>
+        <div class="footer"><p>B.Tech CSE (AIML) | Built by Sushanth</p></div>
+    </div>
+    <script>
+        let currentTool = 'professional';
+        const btnLabels = {
+            'professional': 'Make it Professional',
+            'humanize': 'Humanize This Text',
+            'ai_check': 'Check for AI Detection'
+        };
+        function selectTool(tool) {
+            currentTool = tool;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            const p = { 'professional': 'Paste any casual paragraph here...', 'humanize': 'Paste AI-generated text to humanize it...', 'ai_check': 'Paste text to check AI detection...' };
+            document.getElementById('inputText').placeholder = p[tool];
+            document.getElementById('inputText').value = '';
+            document.getElementById('transformBtn').textContent = btnLabels[tool];
+            document.getElementById('resultBox').classList.remove('show');
+            document.getElementById('resultContent').innerHTML = '';
+        }
+        async function transformText() {
+            const text = document.getElementById('inputText').value;
+            if (!text.trim()) { alert('Please enter some text first!'); return; }
+            const btn = document.getElementById('transformBtn');
+            btn.disabled = true;
+            document.getElementById('loader').classList.add('show');
+            document.getElementById('resultBox').classList.remove('show');
+            try {
+                const resp = await fetch('/api/transform', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, mode: currentTool }) });
+                const data = await resp.json();
+                if (!data.success) throw new Error(data.error || 'Failed');
+                document.getElementById('loader').classList.remove('show');
+                const r = data.result;
+                if (currentTool === 'ai_check') {
+                    document.getElementById('resultTitle').textContent = 'AI Detector - Result';
+                    const bc = r.ai_probability < 30 ? 'low' : (r.ai_probability < 60 ? 'medium' : 'high');
+                    const vc = r.ai_probability < 30 ? 'safe' : (r.ai_probability < 60 ? 'suspicious' : 'caught');
+                    document.getElementById('resultContent').innerHTML = '<div class="detection-result"><p><strong>AI Probability:</strong> '+r.ai_probability+'%</p><div class="detection-bar"><div class="detection-fill '+bc+'" style="width:'+r.ai_probability+'%"></div></div><div class="verdict '+vc+'">'+r.verdict+'</div><p>AI Patterns: '+r.ai_patterns+' | Human Patterns: '+r.human_patterns+'</p><p style="font-size:0.9em;color:rgba(255,255,255,0.7);margin-top:8px;">'+(r.explanation||'')+'</p></div>';
+                } else {
+                    document.getElementById('resultTitle').textContent = currentTool === 'professional' ? 'Professional Writer - Result' : 'Humanizer - Result';
+                    document.getElementById('resultContent').innerHTML = '<div class="result-output">'+r+'</div><button class="copy-btn" onclick="copyResult()">Copy Result</button>';
+                }
+                document.getElementById('resultBox').classList.add('show');
+            } catch(e) {
+                document.getElementById('loader').classList.remove('show');
+                document.getElementById('resultTitle').textContent = 'Error';
+                document.getElementById('resultContent').innerHTML = '<p style="color:#f87171;">'+e.message+'</p>';
+                document.getElementById('resultBox').classList.add('show');
+            }
+            btn.disabled = false;
+        }
+        function copyResult() {
+            const t = document.querySelector('.result-output').textContent;
+            navigator.clipboard.writeText(t).then(() => { document.querySelector('.copy-btn').textContent = 'Copied!'; setTimeout(() => { document.querySelector('.copy-btn').textContent = 'Copy Result'; }, 2000); });
+        }
+    </script>
+</body>
+</html>
